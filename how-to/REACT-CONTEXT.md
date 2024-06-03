@@ -93,13 +93,13 @@ const { state, dispatch } = useAppContext();
 To `dispatch` an `action`, use the following code in your React Component:
 
 ```jsx
-function AddItemToBasketButton() {
+function RentButton() {
   const { state, dispatch } = useAppContext();
   return (
     <button
       onClick={function () {
         dispatch({
-          type: "NEW_ITEM_ADDED",
+          type: "NEW_BASKET_ITEM",
           item: { title: "red tractor" },
         });
       }}
@@ -108,10 +108,10 @@ function AddItemToBasketButton() {
 }
 ```
 
-When user will click on the `AddItemToBasketButton`:
+When user will click on the `RentButton`:
 
-1. an `action` of `type` `NEW_ITEM_ADDED` will be `dispatched`
-2. and the `reducer` function will be called with the `action` parameter which will be the object `{ type: "NEW_ITEM_ADDED", item: { title: "red tractor" } }`
+1. an `action` of `type` `NEW_BASKET_ITEM` will be `dispatched`
+2. and the `reducer` function will be called with the `action` parameter which will be the object `{ type: "NEW_BASKET_ITEM", item: { title: "red tractor" } }`
 
    ```jsx
    function reducer(state, action) {
@@ -150,14 +150,13 @@ When user will click on the `AddItemToBasketButton`:
 
 Let's consider our `TractorCard` React component from [React.useState hook documentation](./REACT-USE-STATE-HOOK.md).
 
-### Example: Add to basket feature
+### Example: Réserver feature
 
-**Feature**: When a user clicks on the `Add to basket` button:
+**Feature**: When a user clicks on the `Réserver` button:
 
-- The `TractorCard` button is disabled
+- The `Réserver` button is disabled and text becomes `Ajouté au panier`
 - a new `item` is added the the `basket`
-- the navigation menu `Badge` is incremented by 1
-- the `BasketTable` React component displays the new `item` added
+- a `Basket` React component displays the new `item` added
 
 Considering the following `AppContext`:
 
@@ -210,76 +209,94 @@ function App() {
 export default App;
 ```
 
-#### `AddToBasket` React component
+#### `RentButton` React component
 
-The `AddToBasket` button React component will look like:
+The `RentButton` button React component will look like:
 
 ```jsx
 import React from "react";
-import { useAppContext } from "./AppContext";
+import useAppContext from "./AppContext";
 
-function AddToBasket({ item }) {
+export function RentButton({ tractor }) {
   const { state, dispatch } = useAppContext();
+  function onRentClick() {
+    dispatch({
+      type: "NEW_BASKET_ITEM",
+      item: tractor,
+    });
+  }
 
-  // alreadyAdded is `true` if state.basket contains the `item` passed in props;
-  // alreadtAdded is `false` otherwise
+  // isRented is `true` if state.basket contains the `item` passed in props
+  //                    (by checking the tractor id)
+  // isRented is `false` otherwise
   // Note:
-  //    `find` will return the `item` in basket if found and `undefined` otherwise
-  //    the operator `!!` will return `true` if `item` is found and false if `undefined`
-  const alreadyAdded = !!state.basket.find(
-    (itemInBasket) => itemInBasket.title === item.title
-  );
+  //    `find(<condition function>)` checks if a basket's state incudes this
+  //                                 tractor by checking only the `id` field
+  //                                 of tractor, so `id` needs to be unique.
+  const isRented = state.basket.find((t) => tractor.id === t.id);
+
+  const buttonText = isRented ? "Ajouté au panier" : "Réserver";
 
   return (
     <button
-      disabled={alreadyAdded}
-      onClick={function () {
-        dispatch({ type: "NEW_BASKET_ITEM", item: item });
+      disabled={isRented}
+      onClick={() => {
+        onRentClick();
       }}
     >
-      {alreadyAdded ? "Déjà ajouté au panier" : "Ajouter au panier"}
+      {buttonText}
     </button>
   );
 }
-
-export default AddToBasket;
 ```
 
 This React component can be use inside the `TractorCard` component like:
 
 ```jsx
 import React from "react";
-import AddToBasket from "./AddToBasket";
+import { RentButton } from "./RentButton";
 
-function TractorCard({ title, price, discount, imageSrc }) {
+function TractorCard() {
+  const tractor = {
+    id: 1,
+    commune: "Paris",
+    category: "tracteur agricole",
+    description: "Un exemple de description",
+    imageUrl: "https://touslestracteurs.com/images/Case_IH/CX90.jpg",
+  };
   return (
-    <div className="card">
-      {/** ... **/}
-      <AddToBasket item={{ title: title, price: price - discount }} />
+    <div className="catalog-item">
+      <img src={tractor.imageUrl} />
+      <div className="content">
+        <span className="category">{tractor.category}</span>
+        <p>{tractor.description}</p>
+        <p>{tractor.commune}</p>
+      </div>
+      <div className="actions">
+        <RentButton tractor={tractor} />
+        <a>Détail...</a>
+      </div>
     </div>
   );
 }
-
-export default TractorCard;
 ```
 
-![add to basket](../images/before-click-add-to-basket.png)
+![Réserver](../images/before-click-add-to-basket.png)
 
-![alread added](../images/already-added.png)
+![already added](../images/already-added.png)
 
-#### `BasketTable` React component
+#### `Basket` React component
 
-The `BasketTable` React component looks like:
+The `Basket` React component looks like:
 
 ```jsx
 import useAppContext from "./AppContext";
-import "./Basket.css";
 
 function EmptyBasket() {
   return <h4>Votre panier est vide</h4>;
 }
 
-function BasketTable() {
+export function Basket() {
   const {
     state: { basket },
   } = useAppContext();
@@ -288,16 +305,16 @@ function BasketTable() {
     <table>
       <thead>
         <tr>
-          <th>Produit</th>
-          <th>Prix</th>
+          <th>Catégorie</th>
+          <th>Commune</th>
         </tr>
       </thead>
       <tbody>
         {basket.length > 0 ? (
           basket.map((item, idx) => (
             <tr key={idx}>
-              <td>{item.title}</td>
-              <td>{item.price} € / kg</td>
+              <td>{item.category}</td>
+              <td>Lieu: {item.commune}</td>
             </tr>
           ))
         ) : (
@@ -311,75 +328,25 @@ function BasketTable() {
     </table>
   );
 }
-
-export default BasketTable;
 ```
 
 The line `const { state: { basket } } = useAppContext();` reads the `state.basket` proprety from the Application `state`.
-When this value changes, the `BasketTable` React component gets `re-rendered`.
+When this value changes, the `Basket` React component gets `re-rendered`.
 
 If some `item` are present in the `state.basket` array, then some table rows with `item.title` and `item.price` will be re-rendered.
 If no items are in the `state.basket` array (e.g. initial state of the app), the the `EmptyBasket` React component will be rendered and the text `Votre panier est vide` will be displayed.
 
 ![basket with item](../images/basket-with-item.png)
 
-#### `MainMenu` with `Basket` navigation item React component
-
-The MainMenu React component using `react-router-dom` and the `@fortawesome/react-fontawesome` library for the basket icon looks like:
-
-```jsx
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faShoppingCart } from "@fortawesome/free-solid-svg-icons";
-import NavItem from "./NavItem";
-import useAppContext from "./AppContext";
-
-function MainMenu() {
-  const {
-    state: { basket },
-  } = useAppContext();
-  const numberOfItemsInBasket = basket.length;
-
-  return (
-    <nav className="menu-horizontal">
-      <ul>
-        <li>
-          <NavItem to="/product">Produits</NavItem>
-        </li>
-        <li>
-          <NavItem to="/command">Commandes</NavItem>
-        </li>
-        <li>
-          <NavItem to="/basket">
-            <FontAwesomeIcon icon={faShoppingCart} />
-            {numberOfItemsInBasket > 0 && `(${numberOfItemsInBasket})`}
-          </NavItem>
-        </li>
-      </ul>
-    </nav>
-  );
-}
-
-export default MainMenu;
-```
-
-The line `const { state: { basket } } = useAppContext();` reads the `state.basket` array of `item` which will re-render the `MainMenu` when `state.basket` will change.
-
-The next line `const numberOfItemsInBasket = basket.length;` is only keeping the number of `item` in `state.basket` by reading the lenght of the `state.basket` array.
-
-This will then render the `(1)` when one item is added to the `state.basket` array, `(2)` when a second item will be added, etc.
-
-![basket nav link](../images/basket-new-item.png)
-
 #### Summary
 
-When a user clicks on a `Ajouter au panier` button, exposed by the `AddToBasket` React component, an `action` with `{ type: "NEW_BASKET_ITEM", item: {title: "...", price: ... }}` is `dispatched` using the `dispatch` function obtain by the `useAppContext()` hook.
+When a user clicks on a `Ajouter au panier` button, exposed by the `RentButton` React component, an `action` with `{ type: "NEW_BASKET_ITEM", item: {category: "...", commune: ... }}` is `dispatched` using the `dispatch` function obtain by the `useAppContext()` hook.
 
-Then, the `reducer` function from the `AppContext.jsx` file is called and will transform the initial state of `{ state: { basket: [] } }` to `{ state: { basket: [ { title: "...", price: ... } ] } }`.
+Then, the `reducer` function from the `AppContext.jsx` file is called and will transform the initial state of `{ state: { basket: [] } }` to `{ state: { basket: [ { category: "...", commune: ... } ] } }`.
 
 A new `state` is set which will:
 
-- re-render the `MainMenu`; which will render a `(1)` next to the basket icon
-- re-render the `AddToBasket` button of the clicked item; which will render the button as `disabled` and replace the text to `Déjà ajouté au panier`
-- re-render the `BasketTable`; which will render the table with one row corresponding to the `item` dispatched
+- re-render the `RentButton` button of the clicked item; which will render the button as `disabled` and replace the text to `Ajouté au panier`
+- re-render the `Basket`; which will render the table with one row corresponding to the `item` dispatched
 
 That's all there is to know, with this setup, you should be able to implement **any** reactivity what so ever to your application.

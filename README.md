@@ -269,17 +269,15 @@ export default function App() {
 }
 ```
 
-Follow the documentation provided [how to use React context](./how-to/REACT-CONTEXT.md) to know how to use the `useAppContext` hooks.
+Follow the documentation provided [how to use React context](./how-to/REACT-CONTEXT.md) to know how to use the `useAppContext` hooks and help you create a new `Basket` view.
 
-If for some of your component you need local state management, see the [How to use React.useState documentation provided in this workshop](./how-to/REACT-USE-STATE-HOOK.md)
-
-> This documentation explains how to implement the `Add to basket` functionality; which is the objective of the [Challenge 1](#challenge-1-add-to-basket)
+> This documentation explains how to implement the `Add to basket` functionality; which covers partially the objective of the [Challenge 1](#challenge-1-add-to-basket)
 
 ## Step 4: Adapt our CD
 
 It's time to deploy all those achievements.
 
-**Objective**: Adapt the CD pipline to deploy the reactive frontend of socrate.
+**Objective**: Adapt the CD pipline to deploy the reactive frontend of sotracteur.
 
 ### Dockerize the frontend
 
@@ -312,19 +310,25 @@ server {
 - Create a new Dockerfile under `frontend/` directory:
 
 ```dockerfile
-FROM node:19 as build
+FROM node:21-alpine as build
 
-COPY . /code
 WORKDIR /code
 
-RUN npm install
+COPY package.json .
+COPY package-lock.json .
+
+RUN npm ci
+
+COPY . .
 RUN npm run build
 
-FROM nginx:1.23.4
 
-ADD nginx/default.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /code/dist/ /usr/share/nginx/html/
+FROM nginx:1.25.4-alpine
 
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /code/dist /usr/share/nginx/html
+
+EXPOSE 80
 ```
 
 > Note: this dockerfile uses this nice [multi-stage build feature from Docker](https://docs.docker.com/develop/develop-images/multistage-build/)
@@ -335,8 +339,8 @@ COPY --from=build /code/dist/ /usr/share/nginx/html/
 
 ```sh
 # from frontend/
-docker build -t socrate:react .
-docker run -p 8090:80 socrate:react
+docker build -t sotracteur:react .
+docker run -p 8090:80 sotracteur:react
 ```
 
 Check out your app on [localhost:8090](http://localhost:8090).
@@ -363,14 +367,19 @@ build-frontend: # you can rename your build step to be more precise!
 
 ## Challenge 1: Add to basket
 
-**Objective** Integrate the `Add to basket` functionality describe in the [example section of the how to use React context](./how-to/REACT-CONTEXT.md#example-add-to-basket-feature)
+**Feature**: When a user clicks on the `Réserver` button:
+
+- The `Réserver` button is disabled and text becomes `Ajouté au panier`
+- a new `item` is added the the `basket`
+- a `Basket` React component displays the new `item` added
+- a new `Badge` with the number of item in basket is displayed in the menu (next to the basket menu item)
+
+> Note: except from the last bullet point, there is a lot of help in the [how to: React.useContext](./how-to/REACT-CONTEXT.md) documentation.
 
 ## Challenge 2: Remove from basket
-
-Implement the following feature.
 
 **Feature**: When a user selects the `delete` icon of the basket table:
 
 - the item gets removed from the basket table or list (however you've decided to display items in basket)
 - the main navigation's item number is decreased by 1 (e.g. from `(2)` to `(1)` or from `(1)` to nothing)
-- the product becomes enabled again to be put in the basket
+- the tractor becomes available for renting again
