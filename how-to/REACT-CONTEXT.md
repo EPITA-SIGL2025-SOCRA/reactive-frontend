@@ -349,6 +349,6 @@ A new `state` is set which will:
 - re-render the `RentButton` button of the clicked item; which will render the button as `disabled` and replace the text to `Ajouté au panier`
 - re-render the `Basket`; which will render the table with one row corresponding to the `item` dispatched
 
-> You can have a look at the full picture in the [responsive template (branch: step-3b_useContext)](https://github.com/EPITA-SIGL2025-SOCRA/reactive-template/tree/step-3b_useContext)
+> You can have a look at the full picture in the [reactive template (branch: step-3b_useContext)](https://github.com/EPITA-SIGL2025-SOCRA/reactive-template/tree/step-3b_useContext)
 
 That's all there is to know, with this setup, you should be able to implement **any** reactivity what so ever to your application.
